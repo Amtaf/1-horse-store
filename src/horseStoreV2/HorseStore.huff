@@ -1,0 +1,21 @@
+//*HorseStore Interface*/
+#define function mintHorse() nonpayable returns()
+#define function feedHorse(uint256) nonpayable returns()
+#define function isHappyHorse(uint256) view returns(bool)
+#define function horseIdToFedTimeStamp(uint256) view returns(uint256)
+#define function HORSE_HAPPY_IF_FED_WITHIN() view returns(uint256)
+#define macro MAIN() = takes(0) returns(0){
+     0x00 //we are adding 0 to the stack [0],=push0 opcode
+    calldataload //we add the whole calldata into the stack 
+    //to cut of the rest of the calldata and only get the function selector we use SHR OPcode
+    0xE0 shr
+
+    //grabbing our function signature
+    dup1 __FUNC_SIG(feedHorse) eq feedHorse jumpi
+
+    //mintHorse() function selector
+    //feedHorse(uint256 horseId) function selector
+    //isHappyHorse(uint256 horseId) function selector
+    //horseIdToFedTimeStamp(uint256 horseId) public var in solidity is usually turned to a getter function in huff
+    //HORSE_HAPPY_IF_FED_WITHIN
+}

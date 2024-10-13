@@ -1,0 +1,70 @@
+//send calldata --> function dispatch --> function
+
+//macros are similar to fnctions in Huff
+/*Interface*/
+#define function updateHorseNumber(uint256) nonpayable returns()
+
+#define function readNumberOfHorses() view returns(uint256)
+
+#define constant NUMBER_OF_HORSES_STORAGE_SLOT = FREE_STORAGE_POINTER() //0
+
+#define macro MAIN() = takes(0) returns(0) {
+    0x00 //we are adding 0 to the stack [0],=push0 opcode
+    //0x02 //Top [2,0]Bottom
+    calldataload //we add the whole calldata into the stack 
+    //to cut of the rest of the calldata and only get the function selector we use SHR OPcode
+    0xE0 shr
+
+    //updateHorseNumber selector
+    dup1 __FUNC_SIG(updateHorseNumber)         //duplicate function selector to check if it matches the other function selector[function_selector,function_selector]
+    //0xcdfead2e   //[0xcdfead2e, function_selector]
+    eq           //[true_if_func_selector_matches]
+    //jump to updateHorseNumber code if true
+    updateJump    //[updateHorseNumberProgramCounter, true/false]
+    jumpi         //[function_selector]
+    //dup1 __FUNC_SIG(updateHorseNumber) eq updateJump jumpi
+    //readNumberOfHorses => 0xe026c017
+    //0xe026c017     //[readNumberOfHorses function_selector => 0xe026c017]
+    __FUNC_SIG(readNumberOfHorses)
+    eq              //[true_if_func_selector_matches]
+    readJump       //[readJump, true_if_func_selector_matches]
+    jumpi           //[]
+// __FUNC_SIG(readNumberOfHorses) eq readJump jumpi
+
+    0x00 0x00 revert  //[0x00,0x00,revert]
+
+    updateJump:  //this says SET_NUMBER_OF_HORSES() is a valid jump destination
+        SET_NUMBER_OF_HORSES()
+    readJump:
+        GET_NUMBER_OF_HORSES()
+            
+}
+
+//0xcdfead2e0000000000000000000000000000000000000000000000000000000000000007
+#define macro SET_NUMBER_OF_HORSES() = takes(0) returns(0){
+    //1. Get the value to store from calldata 
+    0x04 //1st 4 bytes
+    calldataload    //the value in calldata e.g [7] if we input 7
+    //2. give it a storage slot
+    [NUMBER_OF_HORSES_STORAGE_SLOT]     //[Pointer,0] we are pushing NUMBER_OF_HORSES to STORAGE_SLOT=0
+    //3. sstore opcode
+    sstore
+    stop
+
+}
+
+#define macro GET_NUMBER_OF_HORSES() = takes(0) returns(0){
+    //1. Get storage slot
+    //2. Load the value of that slot into memory
+    //3. return
+    [NUMBER_OF_HORSES_STORAGE_SLOT]   //[key]
+    sload                             //[value]  
+    0x00                              //[0, value]  
+    mstore                            //[]  //Memory: [value]
+    //0x20 == 32 bytes 
+    0x20 0x00 return                  //[]  
+
+
+}
+
+//The result -> 60008060093d393df3 is the contract creation bytecode(takes your smart contract and saves it onchain)
